@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator</title>
+<style>
+  :root {
+    --bg: #1B1D22;
+    --panel: #24272E;
+    --display-text: #F4F2EE;
+    --muted-text: #8B909C;
+    --key-bg: #2E323B;
+    --key-bg-hover: #383D48;
+    --operator: #E8A33D;
+    --operator-hover: #F2B355;
+    --danger: #D9695F;
+    --font-display: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: var(--font-ui);
+    padding: 24px;
+  }
+
+  .calculator {
+    width: 320px;
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  }
+
+  .display {
+    padding: 28px 16px 18px;
+    text-align: right;
+    overflow: hidden;
+  }
+
+  .display .history {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--muted-text);
+    min-height: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .display .current {
+    font-family: var(--font-display);
+    font-size: 44px;
+    color: var(--display-text);
+    margin-top: 6px;
+    word-wrap: break-word;
+    line-height: 1.1;
+  }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  button {
+    border: none;
+    border-radius: 12px;
+    background: var(--key-bg);
+    color: var(--display-text);
+    font-family: var(--font-ui);
+    font-size: 18px;
+    font-weight: 500;
+    padding: 18px 0;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.08s ease;
+  }
+
+  button:hover { background: var(--key-bg-hover); }
+  button:active { transform: scale(0.96); }
+
+  button.operator {
+    background: transparent;
+    color: var(--operator);
+    font-size: 20px;
+  }
+  button.operator:hover { background: rgba(232, 163, 61, 0.12); color: var(--operator-hover); }
+
+  button.equals {
+    background: var(--operator);
+    color: #1B1D22;
+    font-weight: 600;
+  }
+  button.equals:hover { background: var(--operator-hover); }
+
+  button.clear {
+    color: var(--danger);
+    background: transparent;
+    font-size: 16px;
+  }
+  button.clear:hover { background: rgba(217, 105, 95, 0.12); }
+
+  button.span-2 { grid-column: span 2; }
+
+  @media (max-width: 360px) {
+    .calculator { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display">
+    <div class="history" id="history"></div>
+    <div class="current" id="current">0</div>
+  </div>
+
+  <div class="keys">
+    <button class="clear" id="clear">AC</button>
+    <button class="operator" id="negate">±</button>
+    <button class="operator" id="percent">%</button>
+    <button class="operator" data-op="÷">÷</button>
+
+    <button data-num="7">7</button>
+    <button data-num="8">8</button>
+    <button data-num="9">9</button>
+    <button class="operator" data-op="×">×</button>
+
+    <button data-num="4">4</button>
+    <button data-num="5">5</button>
+    <button data-num="6">6</button>
+    <button class="operator" data-op="−">−</button>
+
+    <button data-num="1">1</button>
+    <button data-num="2">2</button>
+    <button data-num="3">3</button>
+    <button class="operator" data-op="+">+</button>
+
+    <button class="span-2" data-num="0">0</button>
+    <button data-num=".">.</button>
+    <button class="equals" id="equals">=</button>
+  </div>
+</div>
+
+<script>
+  const historyEl = document.getElementById('history');
+  const displayEl = document.getElementById('current');
+
+  let state = {
+    current: '0',
+    previous: null,
+    operator: null,
+    overwrite: true
+  };
+
+  function updateDisplay() {
+    displayEl.textContent = formatNumber(state.current);
+    historyEl.textContent = state.previous !== null && state.operator
+      ? `${formatNumber(state.previous)} ${state.operator}`
+      : '';
+  }
+
+  function formatNumber(value) {
+    const num = parseFloat(value);
+    if (isNaN(num)) return '0';
+    const parts = value.toString().split('.');
+    const intPart = new Intl.NumberFormat('en-US').format(parts[0]);
+    return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
+  }
+
+  function inputDigit(digit) {
+    if (state.overwrite) {
+      state.current = digit === '.' ? '0.' : digit;
+      state.overwrite = false;
+      return;
+    }
+    if (digit === '.' && state.current.includes('.')) return;
+    if (state.current.replace('-', '').replace('.', '').length >= 12) return;
+    state.current = state.current === '0' && digit !== '.' ? digit : state.current + digit;
+  }
+
+  function chooseOperator(op) {
+    if (state.operator && !state.overwrite) {
+      compute();
+    }
+    state.previous = state.current;
+    state.operator = op;
+    state.overwrite = true;
+  }
+
+  function compute() {
+    const prev = parseFloat(state.previous);
+    const curr = parseFloat(state.current);
+    if (isNaN(prev) || isNaN(curr)) return;
+
+    let result;
+    switch (state.operator) {
+      case '+': result = prev + curr; break;
+      case '−': result = prev - curr; break;
+      case '×': result = prev * curr; break;
+      case '÷': result = curr === 0 ? NaN : prev / curr; break;
+      default: return;
+    }
+
+    state.current = isNaN(result) ? 'Error' : trimFloat(result);
+    state.operator = null;
+    state.previous = null;
+    state.overwrite = true;
+  }
+
+  function trimFloat(num) {
+    return Math.round(num * 1e10) / 1e10 + '';
+  }
+
+  function clearAll() {
+    state = { current: '0', previous: null, operator: null, overwrite: true };
+  }
+
+  function negate() {
+    if (state.current === '0') return;
+    state.current = state.current.startsWith('-')
+      ? state.current.slice(1)
+      : '-' + state.current;
+  }
+
+  function percent() {
+    state.current = trimFloat(parseFloat(state.current) / 100);
+  }
+
+  document.querySelectorAll('[data-num]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inputDigit(btn.dataset.num);
+      updateDisplay();
+    });
+  });
+
+  document.querySelectorAll('[data-op]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      chooseOperator(btn.dataset.op);
+      updateDisplay();
+    });
+  });
+
+  document.getElementById('equals').addEventListener('click', () => {
+    compute();
+    updateDisplay();
+  });
+
+  document.getElementById('clear').addEventListener('click', () => {
+    clearAll();
+    updateDisplay();
+  });
+
+  document.getElementById('negate').addEventListener('click', () => {
+    negate();
+    updateDisplay();
+  });
+
+  document.getElementById('percent').addEventListener('click', () => {
+    percent();
+    updateDisplay();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') { inputDigit(e.key); updateDisplay(); }
+    else if (e.key === '.') { inputDigit('.'); updateDisplay(); }
+    else if (e.key === '+') { chooseOperator('+'); updateDisplay(); }
+    else if (e.key === '-') { chooseOperator('−'); updateDisplay(); }
+    else if (e.key === '*') { chooseOperator('×'); updateDisplay(); }
+    else if (e.key === '/') { e.preventDefault(); chooseOperator('÷'); updateDisplay(); }
+    else if (e.key === 'Enter' || e.key === '=') { compute(); updateDisplay(); }
+    else if (e.key === 'Escape') { clearAll(); updateDisplay(); }
+    else if (e.key === 'Backspace') {
+      state.current = state.current.length > 1 ? state.current.slice(0, -1) : '0';
+      updateDisplay();
+    }
+  });
+
+  updateDisplay();
+</script>
+
+</body>
+</html>
