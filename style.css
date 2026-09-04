@@ -1,0 +1,128 @@
+:root {
+  --bg: #1B1D22;
+  --panel: #24272E;
+  --display-text: #F4F2EE;
+  --muted-text: #8B909C;
+  --key-bg: #2E323B;
+  --key-bg-hover: #383D48;
+  --operator: #E8A33D;
+  --operator-hover: #F2B355;
+  --danger: #D9695F;
+  --font-display: 'IBM Plex Mono', 'Courier New', monospace;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  font-family: var(--font-ui);
+  padding: 24px;
+}
+
+.calculator {
+  width: 320px;
+  background: var(--panel);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+}
+
+.display {
+  padding: 28px 16px 18px;
+  text-align: right;
+  overflow: hidden;
+}
+
+.display .history {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--muted-text);
+  min-height: 18px;
+  letter-spacing: 0.02em;
+}
+
+.display .current {
+  font-family: var(--font-display);
+  font-size: 44px;
+  color: var(--display-text);
+  margin-top: 6px;
+  word-wrap: break-word;
+  line-height: 1.1;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  background: var(--key-bg);
+  color: var(--display-text);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 500;
+  padding: 18px 0;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+button:hover {
+  background: var(--key-bg-hover);
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+button.operator {
+  background: transparent;
+  color: var(--operator);
+  font-size: 20px;
+}
+
+button.operator:hover {
+  background: rgba(232, 163, 61, 0.12);
+  color: var(--operator-hover);
+}
+
+button.equals {
+  background: var(--operator);
+  color: #1B1D22;
+  font-weight: 600;
+}
+
+button.equals:hover {
+  background: var(--operator-hover);
+}
+
+button.clear {
+  color: var(--danger);
+  background: transparent;
+  font-size: 16px;
+}
+
+button.clear:hover {
+  background: rgba(217, 105, 95, 0.12);
+}
+
+button.span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 360px) {
+  .calculator {
+    width: 100%;
+  }
+}
